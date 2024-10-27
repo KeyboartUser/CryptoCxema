@@ -250,19 +250,15 @@ export default{
 
      updateTickers(tickerName,price){
       this.tickers.filter(t => t.name === tickerName).forEach(t => {t.price = price});
+      if (tickerName === this.sel.name){
+        if (this.pricelist.length < 20){
+                  this.pricelist.push(price);
+              }else { 
+                this.pricelist.pop(0);
+                this.pricelist.push(price);
+            }
+      }
      },
-
-    
-        // графическое изображение 
-          //   if (this.sel?.name === ticName){
-          //     if (this.pricelist.length < 20){
-          //         this.pricelist.push(newSell.USD);
-          //     }else { 
-          //       this.pricelist.pop(0);
-          //       this.pricelist.push(newSell.USD);
-          //   }
-          // }
-
 
     formatPrice(price){
       if (price === "-"){
