@@ -61,7 +61,7 @@
                   {{ t.name }} - USD
                 </dt>
                 <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                  {{t.price}}
+                  {{this.formatPrice(t.price)}}
                 </dd>
               </div>
               <div class="w-full border-t border-gray-200"></div>
@@ -140,10 +140,6 @@ export default{
       this.tickers.forEach(ticker =>{subscribeOnTicker(ticker.name,  subscribeOnTicker(ticker.name,(newPrice) => this.updateTickers(ticker.name,newPrice)))});
     }
     //PodpeScheke
-    //setInterval(this.subscribeSells, 3000);
-    // this.tickers.forEach(ticker => {
-    //   this.subscribeSells(ticker.name)
-    // });
     this.ldCoin();
   },
 
@@ -256,17 +252,7 @@ export default{
       this.tickers.filter(t => t.name === tickerName).forEach(t => {t.price = price});
      },
 
-     async subscribeSells(){
-        // if (!this.tickers.length){
-        //   return;
-        // }
-        // // подписчикам на меня не похуй
-        //   const newSells = await loadTicker(this.tickers.map(t => t.name));
-        //   //это фича не мем
-        //   this.tickers.forEach(ticker => {
-        //     const price = newSells[ticker.name.toUpperCase()];
-        //     ticker.price = price.toFixed(2) ?? "-";
-        //   })
+    
         // графическое изображение 
           //   if (this.sel?.name === ticName){
           //     if (this.pricelist.length < 20){
@@ -276,6 +262,14 @@ export default{
           //       this.pricelist.push(newSell.USD);
           //   }
           // }
+
+
+    formatPrice(price){
+      if (price === "-"){
+        return "-"
+      }
+      let newPrice = price ? price.toFixed(3) : "-";
+      return newPrice;
     },
    
     windowDataChecker(){
