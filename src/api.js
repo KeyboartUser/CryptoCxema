@@ -6,6 +6,24 @@ const Aggregate_Index = "5";
 const socket = new WebSocket(
   `wss://streamer.cryptocompare.com/v2?api_key=${Api_key}`
 );
+//broadcast
+const bc = new BroadcastChannel("main");
+bc.addEventListener("message", (e) => {
+  if (socket.readyState !== WebSocket.OPEN) {
+    const {
+      TYPE: type,
+      FROMSYMBOL: currency,
+      PRICE: newPrice,
+    } = JSON.parse(e.data);
+    if (type != Aggregate_Index || newPrice === undefined) {
+      return;
+    }
+    const handlers = tickersHandler.get(currency) ?? [];
+    handlers.forEach((fn) => fn(newPrice));
+  }
+});
+
+//
 socket.addEventListener("message", (e) => {
   const {
     TYPE: type,
@@ -15,6 +33,7 @@ socket.addEventListener("message", (e) => {
   if (type != Aggregate_Index || newPrice === undefined) {
     return;
   }
+  bc.postMessage(e.data);
   const handlers = tickersHandler.get(currency) ?? [];
   handlers.forEach((fn) => fn(newPrice));
 });
@@ -24,12 +43,14 @@ function subscribeToWs(message) {
   const stringifyMessage = JSON.stringify(message);
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(stringifyMessage);
+    //bc.postMessage(stringifyMessage);
     return;
   }
   socket.addEventListener(
     "open",
     () => {
       socket.send(stringifyMessage);
+      //bc.postMessage(stringifyMessage);
     },
     { once: true }
   );
@@ -62,4 +83,5 @@ export const unsubscribeOnTicker = (ticker) => {
   unsubsctibeOnTickerWs(ticker);
 };
 
+//just for check
 window.ticker = tickersHandler;

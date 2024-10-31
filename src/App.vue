@@ -250,7 +250,7 @@ export default{
 
      updateTickers(tickerName,price){
       this.tickers.filter(t => t.name === tickerName).forEach(t => {t.price = price});
-      if (tickerName === this.sel.name){
+      if (this.sel && tickerName === this.sel.name ){
         if (this.pricelist.length < 20){
                   this.pricelist.push(price);
               }else { 
