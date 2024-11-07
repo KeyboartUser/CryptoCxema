@@ -6,6 +6,9 @@ const Aggregate_Index = "5";
 const socket = new WebSocket(
   `wss://streamer.cryptocompare.com/v2?api_key=${Api_key}`
 );
+//messages that can be reseived
+const Invalid_Sub = "INVALID_SUB";
+let BTCprice = null;
 //broadcast
 const bc = new BroadcastChannel("main");
 bc.addEventListener("message", (e) => {
@@ -14,12 +17,18 @@ bc.addEventListener("message", (e) => {
       TYPE: type,
       FROMSYMBOL: currency,
       PRICE: newPrice,
+      TOSYMBOL: sym,
     } = JSON.parse(e.data);
     if (type != Aggregate_Index || newPrice === undefined) {
       return;
     }
+    //Broadcast changes if BTC->USD
     const handlers = tickersHandler.get(currency) ?? [];
-    handlers.forEach((fn) => fn(newPrice));
+    if (sym === "BTC") {
+      handlers.forEach((fn) => fn(newPrice * BTCprice));
+    } else {
+      handlers.forEach((fn) => fn(newPrice));
+    }
   }
 });
 
@@ -29,13 +38,47 @@ socket.addEventListener("message", (e) => {
     TYPE: type,
     FROMSYMBOL: currency,
     PRICE: newPrice,
+    MESSAGE: message,
+    PARAMETER: param,
+    TOSYMBOL: sym,
   } = JSON.parse(e.data);
-  if (type != Aggregate_Index || newPrice === undefined) {
-    return;
-  }
-  bc.postMessage(e.data);
+  // if (type != Aggregate_Index || newPrice === undefined) {
+  //   return;
+  // }
+  //+parce BTC->USD logic
   const handlers = tickersHandler.get(currency) ?? [];
-  handlers.forEach((fn) => fn(newPrice));
+  switch (type) {
+    case "5":
+      if (newPrice === undefined) {
+        return;
+      } else {
+        if (sym === "USD") {
+          if (currency === "BTC") {
+            BTCprice = newPrice;
+          }
+          bc.postMessage(e.data);
+          handlers.forEach((fn) => fn(newPrice));
+        } else if (sym === "BTC") {
+          bc.postMessage(e.data);
+          handlers.forEach((fn) => fn(newPrice * BTCprice));
+        }
+      }
+      break;
+    case "500":
+      if (message === Invalid_Sub) {
+        const curType = param.split("~");
+        console.log(curType);
+        if (curType[3] === "BTC") {
+          break;
+        } else {
+          subscribeOnTickerWs("BTC");
+          subscribeOnTickerWs(curType[2], "BTC");
+        }
+      }
+      break;
+    default:
+      break;
+  }
 });
 
 //ws subscribe
@@ -43,28 +86,26 @@ function subscribeToWs(message) {
   const stringifyMessage = JSON.stringify(message);
   if (socket.readyState === WebSocket.OPEN) {
     socket.send(stringifyMessage);
-    //bc.postMessage(stringifyMessage);
     return;
   }
   socket.addEventListener(
     "open",
     () => {
       socket.send(stringifyMessage);
-      //bc.postMessage(stringifyMessage);
     },
     { once: true }
   );
 }
-function subscribeOnTickerWs(ticker) {
+function subscribeOnTickerWs(ticker, tsym = "USD") {
   subscribeToWs({
     action: "SubAdd",
-    subs: [`5~CCCAGG~${ticker}~USD`],
+    subs: [`5~CCCAGG~${ticker}~${tsym}`],
   });
 }
-function unsubsctibeOnTickerWs(ticker) {
+function unsubsctibeOnTickerWs(ticker, tsym = "USD") {
   subscribeToWs({
     action: "SubRemove",
-    subs: [`5~CCCAGG~${ticker}~USD`],
+    subs: [`5~CCCAGG~${ticker}~${tsym}`],
   });
 }
 //load coinlist from the server

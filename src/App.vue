@@ -53,7 +53,10 @@
           <hr class="w-full border-t border-gray-600 my-4" />
           <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
             <div v-for="t in filteredTickers" 
-            :class = "sel?.name === t?.name ? 'border-4' : ''"
+            :class = "{'border-4' : sel?.name === t?.name ,
+              'bg-red-200' : t.price === '-',
+            }
+            "
             @click=" select(t)"
             :key="t.name"  class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer">
               <div class="px-4 py-5 sm:p-6 text-center">
